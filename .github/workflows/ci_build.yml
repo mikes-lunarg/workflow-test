@@ -1,0 +1,76 @@
+name: CI Build
+
+# Perform CI builds for pull requests targeting the dev branches.
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  linux:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Ubuntu Latest GCC",
+            artifact: "gfxreconstruct-dev-ubuntu-gcc-release",
+            os: ubuntu-latest,
+            cc: "gcc", cxx: "g++"
+          }
+
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@v1
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install -y libx11-xcb-dev libxcb-keysyms1-dev libwayland-dev libxrandr-dev liblz4-dev libzstd-dev
+    - name: Run Build Script
+      run: |
+        python3 scripts/build.py --skip-check-code-style --skip-tests
+    - name: Prepare Artifact
+      run: |
+        cp LICENSE.txt build/linux/x64/bin
+        cp USAGE_desktop.md build/linux/x64/bin
+        rm -rf build/linux/x64/bin/staging-json
+        mv build/linux/x64/bin gfxreconstruct-dev
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ matrix.config.artifact }}
+        path: ./gfxreconstruct-dev
+  
+  windows:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    env:
+      artifact_prefix: "gfxreconstruct-dev"
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows Latest MSVC",
+            artifact: "gfxreconstruct-dev-windows-msvc-release",
+            os: windows-latest,
+            cc: "cl", cxx: "cl"
+          }
+
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@v1
+    - name: Run Build Script
+      run: |
+        python scripts/build.py --skip-check-code-style --skip-tests
+    - name: Prepare Artifact
+      run: |
+        copy LICENSE.txt build/windows/x64/bin
+        move build/windows/x64/bin gfxreconstruct-dev
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ matrix.config.artifact }}
+        path: ./gfxreconstruct-dev

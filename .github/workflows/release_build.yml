@@ -1,0 +1,155 @@
+name: Release Build
+
+# Build, create a release, and attach build artifacts to the release
+# when a version tag is pushed.
+
+on:
+  push:
+    tags:       
+      - v*
+
+jobs:
+  linux:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Ubuntu Latest GCC",
+            artifact: "gfxreconstruct-dev-ubuntu-gcc-release",
+            os: ubuntu-latest,
+            cc: "gcc", cxx: "g++"
+          }
+
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@v1
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install -y libx11-xcb-dev libxcb-keysyms1-dev libwayland-dev libxrandr-dev liblz4-dev libzstd-dev
+    - name: Run Build Script
+      run: |
+        python3 scripts/build.py --skip-check-code-style --skip-tests
+    - name: Prepare Artifact
+      run: |
+        cp LICENSE.txt build/linux/x64/bin
+        cp USAGE_desktop.md build/linux/x64/bin
+        rm -rf build/linux/x64/bin/staging-json
+        mv build/linux/x64/bin gfxreconstruct-dev
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ matrix.config.artifact }}
+        path: ./gfxreconstruct-dev
+  
+  windows:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    env:
+      artifact_prefix: "gfxreconstruct-dev"
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows Latest MSVC",
+            artifact: "gfxreconstruct-dev-windows-msvc-release",
+            os: windows-latest,
+            cc: "cl", cxx: "cl"
+          }
+
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@v1
+    - name: Run Build Script
+      run: |
+        python scripts/build.py --skip-check-code-style --skip-tests
+    - name: Prepare Artifact
+      run: |
+        copy LICENSE.txt build/windows/x64/bin
+        move build/windows/x64/bin gfxreconstruct-dev
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ matrix.config.artifact }}
+        path: ./gfxreconstruct-dev
+
+  release:
+    if: contains(github.ref, 'tags/v')
+    name: Create Release for Tag
+    runs-on: ubuntu-latest
+    needs: [ linux, windows ]
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: Upload Release URL
+      run: |
+        echo "${{ steps.create_release.outputs.upload_url }}" > ./release_url
+    - uses: actions/upload-artifact@v1
+      with:
+        name: release_url
+        path: ./release_url
+
+  publish:
+    if: contains(github.ref, 'tags/v')
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Upload Windows Release Artifact",
+            os: ubuntu-latest,
+            artifact: "gfxreconstruct-dev-windows-msvc-release",
+            command: "zip",
+            suffix: "windows-msvc.zip",
+            type: "application/zip"
+          }
+        - {
+            name: "Upload Ubuntu Release Artifact",
+            os: ubuntu-latest,
+            artifact: "gfxreconstruct-dev-ubuntu-gcc-release",
+            command: "tar czf",
+            suffix: "ubuntu-gcc.tar.gz",
+            type: "application/x-gtar"
+          }
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v1
+      with:
+        name: ${{ matrix.config.artifact }}
+        path: ./gfxreconstruct-${{ github.ref }}
+    - name: Make Release Artifact
+      run: |
+        ${{ matrix.config.command }} gfxreconstruct-${{ github.ref }}-${{ matrix.config.suffix }} gfxreconstruct-${{ github.ref }}
+    - name: Download Release URL
+      uses: actions/download-artifact@v1
+      with:
+        name: release_url
+        path: ./release_url
+    - id: set_upload_url
+      run: |
+        upload_url=`cat ./upload_url`
+        echo ::set-output name=upload_url::$upload_url
+    - name: Upload to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
+        asset_name: gfxreconstruct-${{ github.ref }}-${{ matrix.config.suffix }}
+        asset_path: ./gfxreconstruct-${{ github.ref }}-${{ matrix.config.suffix }}
+        asset_content_type: ${{ matrix.config.type }}
+  
