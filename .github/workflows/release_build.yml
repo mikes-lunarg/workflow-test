@@ -137,9 +137,14 @@ jobs:
     - name: Get Tag Body
       id: get_tag_body
       run: |
+        # Retrieve the body of the annotated tag's message and convert it to a
+        # JSON string array, with each line of the message as an array element.
         tag_name=`echo "${{ github.ref }}" | cut -d "/" -f 3`
         tag_body=`git tag -l --format='%(body)' $tag_name`
-        echo "::set-output name=tag_body::$tag_body"
+        tag_body_json="["
+        while read -r line ; do tag_body_json+="\"$line\"," ; done < <(echo "$tag_body")
+        tag_body_json="${tag_body_json::-1}]" # Replace the trailing ',' with ']'
+        echo "::set-output name=tag_body_json::$tag_body_json"
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -148,7 +153,7 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
-        body: "${{ steps.get_tag_body.outputs.tag_body }}"
+        body: "${{ join(fromJson(steps.get_tag_body.outputs.tag_body_json), '\n') }}"
         draft: false
         prerelease: false
     - name: Upload Release URL
