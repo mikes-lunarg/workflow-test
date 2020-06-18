@@ -22,21 +22,21 @@ jobs:
             cc: "gcc", cxx: "g++"
           }
     steps:
-    - name: Clone Repository
+    - name: Clone repository
       uses: actions/checkout@v1
-    - name: Install Dependencies
+    - name: Install build dependencies
       run: |
         sudo apt-get install -y libx11-xcb-dev libxcb-keysyms1-dev libwayland-dev libxrandr-dev liblz4-dev libzstd-dev
-    - name: Run Build Script
+    - name: Run build script
       run: |
         python3 scripts/build.py --skip-check-code-style --skip-tests
-    - name: Prepare Artifact
+    - name: Prepare artifacts
       run: |
         cp LICENSE.txt build/linux/x64/bin/
         cp USAGE_desktop.md build/linux/x64/bin/
         rm -rf build/linux/x64/bin/staging-json
         mv build/linux/x64/bin gfxreconstruct-dev
-    - name: Upload Artifact
+    - name: Upload artifacts
       uses: actions/upload-artifact@v1
       with:
         name: ${{ matrix.config.artifact }}
@@ -56,21 +56,21 @@ jobs:
             cc: "cl", cxx: "cl"
           }
     steps:
-    - name: Clone Repository
+    - name: Clone repository
       uses: actions/checkout@v1
-    - name: Run Build Script
+    - name: Run build script
       run: |
-        python scripts/build.py --skip-check-code-style --skip-tests
-    - name: Prepare Artifact
+        python scripts\build.py --skip-check-code-style --skip-tests
+    - name: Prepare artifacts
       run: |
-        copy LICENSE.txt build/windows/x64/bin/
-        copy USAGE_desktop.md build/windows/x64/bin/
-        move build/windows/x64/bin gfxreconstruct-dev
-    - name: Upload Artifact
+        copy LICENSE.txt build\windows\x64\bin\
+        copy USAGE_desktop.md build\windows\x64\bin\
+        move build\windows\x64\bin gfxreconstruct-dev
+    - name: Upload artifacts
       uses: actions/upload-artifact@v1
       with:
         name: ${{ matrix.config.artifact }}
-        path: ./gfxreconstruct-dev
+        path: .\gfxreconstruct-dev
 
   android:
     name: ${{ matrix.config.name }}
@@ -85,16 +85,16 @@ jobs:
             os: ubuntu-latest
           }
     steps:
-    - name: Clone Repository
+    - name: Clone repository
       uses: actions/checkout@v1
-    - name: Update Submodules
+    - name: Update submodules
       run: |
         git submodule update --init
-    - name: Gradle Build
+    - name: Gradle build
       run: |
         cd android
         sh gradlew assembleRelease assembleDebug
-    - name: Prepare Artifact
+    - name: Prepare artifacts
       run: |
         mkdir gfxreconstruct-dev
         mkdir gfxreconstruct-dev/layer
@@ -105,7 +105,7 @@ jobs:
         cp -r android/layer/build/intermediates/cmake/release/obj/armeabi-v7a gfxreconstruct-dev/layer/
         cp android/tools/replay/build/outputs/apk/debug/replay-debug.apk gfxreconstruct-dev/tools/
         cp android/scripts/gfxrecon.py gfxreconstruct-dev/tools/
-    - name: Upload Artifact
+    - name: Upload artifacts
       uses: actions/upload-artifact@v1
       with:
         name: ${{ matrix.config.artifact }}
