@@ -35,8 +35,8 @@ jobs:
         config:
         - {
             name: "Ubuntu GCC Release",
-            artifact: "gfxreconstruct-dev-ubuntu-gcc-release",
             os: ubuntu-latest,
+            artifact: "gfxreconstruct-dev-ubuntu-gcc-release",
             cc: "gcc", cxx: "g++"
           }
     steps:
@@ -69,8 +69,8 @@ jobs:
         config:
         - {
             name: "Windows MSVC Release",
-            artifact: "gfxreconstruct-dev-windows-msvc-release",
             os: windows-latest,
+            artifact: "gfxreconstruct-dev-windows-msvc-release",
             cc: "cl", cxx: "cl"
           }
     steps:
@@ -99,8 +99,8 @@ jobs:
         config:
         - {
             name: "Android Release/Debug",
-            artifact: "gfxreconstruct-dev-android",
-            os: ubuntu-latest
+            os: ubuntu-latest,
+            artifact: "gfxreconstruct-dev-android"
           }
     steps:
     - name: Clone repository
