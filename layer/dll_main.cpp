@@ -16,6 +16,9 @@
 */
 
 
+#include "encode/trace_manager.h"	
+#include "layer/trace_layer.h"
+
 #if defined(WIN32)
 
 #include <windows.h>
