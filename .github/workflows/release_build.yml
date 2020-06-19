@@ -145,9 +145,9 @@ jobs:
         # Retrieve the body of the annotated tag's multi-line message and convert it to
         # JSON, as an array of strings, with each line of the message as an array element.
         tag_name=`echo "${{ github.ref }}" | cut -d "/" -f 3`
-        tag_body=`git tag -l --format='%(body)' $tag_name`
+        tag_body=`git tag -l --format='%(body)' "$tag_name"`
         tag_body_json="["
-        while read -r line ; do tag_body_json+="\"$line\"," ; done < <(echo "$tag_body")
+        while read -r line ; do tag_body_json+="\"${line}\"," ; done < <(echo "$tag_body")
         tag_body_json="${tag_body_json::-1}]" # Replace the trailing ',' with ']'
         echo "::set-output name=tag_body_json::$tag_body_json"
     - name: Create release
