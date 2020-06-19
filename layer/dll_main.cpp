@@ -15,8 +15,6 @@
 ** limitations under the License.
 */
 
-#include "encode/trace_manager.h"
-#include "layer/trace_layer.h"
 
 #if defined(WIN32)
 
