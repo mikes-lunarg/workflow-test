@@ -83,7 +83,7 @@ jobs:
           Android binaries to compliment the desktop binaries distributed with the Vulkan ${{ steps.get_tag_body.outputs.sdk_version }} SDK.
 
           Build Info:
-          - SDK version: 27 (Android 8.1)
+          - Android SDK Version: 27 (Android 8.1)
         draft: false
         prerelease: false
     - name: Get release URL
