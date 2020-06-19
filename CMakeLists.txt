@@ -28,7 +28,6 @@ if (GIT_REFSPEC)
     string(REGEX MATCH "^sdk-[0-9]+\.[0-9]+\.[0-9]+$" GIT_IS_SDK ${GIT_BRANCH})
 
     if (GIT_IS_MASTER OR GIT_IS_SDK)
-        git_get_exact_tag(GIT_TAG)
         if (GIT_TAG)
             set(GIT_BRANCH ${GIT_TAG})
         else()
